@@ -1,0 +1,21 @@
+syntax = "proto3";
+package proto;
+
+option go_package = ".;proto";
+
+service Emailer {
+  rpc SendOneEmail (SendOneEmailRequest) returns (SendOneEmailResponse) {}
+}
+
+message SendOneEmailRequest {
+  string from = 1;
+  string to = 2;
+  string subject = 3;
+  string text = 4;
+}
+
+message SendOneEmailResponse {
+  // 0 — no error.
+  // 1 — internal error.
+  int64 error_code = 1;
+}
