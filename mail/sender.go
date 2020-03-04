@@ -18,13 +18,14 @@ func NewClient(username, password, host string, port int64) *Client {
 	return &Client{auth: &auth, host: host, addr: fmt.Sprintf("%s:%d", host, port)}
 }
 
-var messageDummy = `To:%s
+var messageDummy = `To: %s
+From: %s <%s>
 Subject: %s
 
 %s`
 
 // SendOneEmail sends one simple email.
-func (c *Client) SendOneEmail(from, to, subj, msg string) error {
-	text := fmt.Sprintf(messageDummy, to, subj, msg)
+func (c *Client) SendOneEmail(from, fromName, to, subj, msg string) error {
+	text := fmt.Sprintf(messageDummy, to, fromName, from, subj, msg)
 	return smtp.SendMail(c.addr, *c.auth, from, []string{to}, []byte(text))
 }

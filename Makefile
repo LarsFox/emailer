@@ -1,6 +1,6 @@
 include .env
 
-default: generate run
+default: generate lint run
 
 run:
 	@go run -race ./cmd/main.go \
@@ -8,6 +8,9 @@ run:
 		--email-password=$(EMAILER_PASSWORD) \
 		--email-host=$(EMAILER_SERVER_HOST) \
 		--serve-port=$(EMAILER_PORT)
+
+lint:
+	@golangci-lint run
 
 generate:
 	@go generate ./...

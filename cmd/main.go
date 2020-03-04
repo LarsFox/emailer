@@ -30,8 +30,6 @@ func init() {
 	flag.Parse()
 }
 
-//go:generate cd .. && protoc --go_out=plugins=grpc:. *.proto
-
 func main() {
 	port := fmt.Sprintf(":%d", serverPort)
 	lis, err := net.Listen("tcp", port)
