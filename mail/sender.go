@@ -19,8 +19,9 @@ func NewClient(username, password, host string, port int64) *Client {
 }
 
 var messageDummy = `To: %s
-From: %s <%s>
+From: "%s" <%s>
 Subject: %s
+Content-Type: text/html; charset=utf-8
 
 %s`
 
