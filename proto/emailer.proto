@@ -5,6 +5,7 @@ option go_package = ".;proto";
 
 service Emailer {
   rpc SendOneEmail (SendOneEmailRequest) returns (SendOneEmailResponse) {}
+  rpc SendOneTGMessage (SendOneTGMessageRequest) returns (SendOneTGMessageResponse) {}
 }
 
 message SendOneEmailRequest {
@@ -16,6 +17,17 @@ message SendOneEmailRequest {
 }
 
 message SendOneEmailResponse {
+  // 0 — no error.
+  // 1 — internal error.
+  int64 error_code = 1;
+}
+
+message SendOneTGMessageRequest {
+  int64 to = 1;
+  string text = 2;
+}
+
+message SendOneTGMessageResponse {
   // 0 — no error.
   // 1 — internal error.
   int64 error_code = 1;
