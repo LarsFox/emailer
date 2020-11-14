@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/LarsFox/emailer/common"
 )
 
 // Client works with Telegram.
@@ -13,20 +15,11 @@ type Client struct {
 	token string
 }
 
-type tgErr struct {
-	code        int32
-	description string
-}
-
-func (e *tgErr) Error() string {
-	return fmt.Sprintf("%d: %s", e.code, e.description)
-}
-
 type response struct {
 	Ok          bool            `json:"ok"`
 	Result      json.RawMessage `json:"result"`
 	Description json.RawMessage `json:"description"` // only if not OK
-	ErrorCode   int32           `json:"error_code"`
+	ErrorCode   int64           `json:"error_code"`
 }
 
 type sendMessage struct {
@@ -46,7 +39,7 @@ func (c *Client) SendMessage(ctx context.Context, chatID int64, text string) err
 	var b bytes.Buffer
 	if err := json.NewEncoder(&b).Encode(&sendMessage{
 		ChatID:    chatID,
-		ParseMode: "markdown",
+		ParseMode: "MarkdownV2",
 		Text:      text,
 	}); err != nil {
 		return err
@@ -70,7 +63,7 @@ func (c *Client) SendMessage(ctx context.Context, chatID int64, text string) err
 	defer resp.Body.Close()
 
 	if !result.Ok {
-		return &tgErr{code: result.ErrorCode, description: string(result.Description)}
+		return &common.TGError{Code: result.ErrorCode, Description: string(result.Description)}
 	}
 	return nil
 }

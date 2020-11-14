@@ -6,6 +6,7 @@ import (
 
 	"github.com/bugsnag/bugsnag-go"
 
+	"github.com/LarsFox/emailer/common"
 	"github.com/LarsFox/emailer/proto"
 )
 
@@ -40,6 +41,9 @@ func (s *Server) SendOneEmail(_ context.Context, in *proto.SendOneEmailRequest) 
 // SendOneTGMessage sends a single TGMessage.
 func (s *Server) SendOneTGMessage(ctx context.Context, in *proto.SendOneTGMessageRequest) (*proto.SendOneTGMessageResponse, error) {
 	if err := s.telegramer.SendMessage(ctx, in.To, in.Text); err != nil {
+		if e, ok := err.(*common.TGError); ok {
+			return &proto.SendOneTGMessageResponse{ErrorCode: e.Code}, nil
+		}
 		bugsnag.Notify(err)
 		return &proto.SendOneTGMessageResponse{ErrorCode: 1}, nil
 	}
