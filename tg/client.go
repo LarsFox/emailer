@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/LarsFox/emailer/common"
@@ -23,9 +24,10 @@ type response struct {
 }
 
 type sendMessage struct {
-	ChatID    int64  `json:"chat_id"`
-	Text      string `json:"text"`
-	ParseMode string `json:"parse_mode"`
+	ChatID            int64  `json:"chat_id"`
+	DisableURLPreview bool   `json:"disable_web_page_preview"`
+	Text              string `json:"text"`
+	ParseMode         string `json:"parse_mode"`
 }
 
 // NewClient returns a new client to work with Telegram Bot API.
@@ -38,9 +40,10 @@ func (c *Client) SendMessage(ctx context.Context, chatID int64, text string) err
 	uri := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", c.token)
 	var b bytes.Buffer
 	if err := json.NewEncoder(&b).Encode(&sendMessage{
-		ChatID:    chatID,
-		ParseMode: "MarkdownV2",
-		Text:      text,
+		ChatID:            chatID,
+		DisableURLPreview: true,
+		ParseMode:         "MarkdownV2",
+		Text:              text,
 	}); err != nil {
 		return err
 	}
@@ -61,6 +64,9 @@ func (c *Client) SendMessage(ctx context.Context, chatID int64, text string) err
 		return err
 	}
 	defer resp.Body.Close()
+
+	log.Println(string(result.Result))
+	log.Println(string(result.Description))
 
 	if !result.Ok {
 		return &common.TGError{Code: result.ErrorCode, Description: string(result.Description)}
