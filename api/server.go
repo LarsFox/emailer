@@ -2,11 +2,12 @@ package api
 
 import (
 	"context"
+	"errors"
 	"log"
 
-	"github.com/bugsnag/bugsnag-go"
+	"github.com/rollbar/rollbar-go"
 
-	"github.com/LarsFox/emailer/common"
+	"github.com/LarsFox/emailer/entities"
 	"github.com/LarsFox/emailer/proto"
 )
 
@@ -31,7 +32,7 @@ func NewServer(mailer mailer, telegramer telegramer) *Server {
 
 // SendOneEmail sends a single email.
 func (s *Server) SendOneEmail(_ context.Context, in *proto.SendOneEmailRequest) (*proto.SendOneEmailResponse, error) {
-	if err := s.mailer.SendOneEmail(in.From, in.FromName, in.To, in.Subject, in.Text); err != nil {
+	if err := s.mailer.SendOneEmail(in.GetFrom(), in.GetFromName(), in.GetTo(), in.GetSubject(), in.GetText()); err != nil {
 		log.Println(err)
 		return &proto.SendOneEmailResponse{ErrorCode: 1}, nil
 	}
@@ -40,11 +41,12 @@ func (s *Server) SendOneEmail(_ context.Context, in *proto.SendOneEmailRequest) 
 
 // SendOneTGMessage sends a single TGMessage.
 func (s *Server) SendOneTGMessage(ctx context.Context, in *proto.SendOneTGMessageRequest) (*proto.SendOneTGMessageResponse, error) {
-	if err := s.telegramer.SendMessage(ctx, in.To, in.Text); err != nil {
-		if e, ok := err.(*common.TGError); ok {
-			return &proto.SendOneTGMessageResponse{ErrorCode: e.Code}, nil
+	if err := s.telegramer.SendMessage(ctx, in.GetTo(), in.GetText()); err != nil {
+		var tgErr *entities.TGError
+		if errors.As(err, &tgErr) {
+			return &proto.SendOneTGMessageResponse{ErrorCode: tgErr.Code}, nil
 		}
-		bugsnag.Notify(err)
+		rollbar.Error(err)
 		return &proto.SendOneTGMessageResponse{ErrorCode: 1}, nil
 	}
 	return &proto.SendOneTGMessageResponse{}, nil

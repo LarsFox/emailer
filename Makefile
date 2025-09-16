@@ -2,12 +2,15 @@ include .env
 
 default: generate lint run
 
+VERSION := "-X main.CommitHash=$(shell git rev-parse --short HEAD)_$(shell date -u +%Y-%m-%d_%H:%M:%S)"
+
 run:
-	@go run -ldflags "-X main.CommitHash=`git rev-parse --short HEAD`" -race ./cmd/main.go \
-		--bugsnag-key=$(BUGSNAG_KEY) \
+	@go run -ldflags $(VERSION) -race ./cmd/main.go \
 		--email-username=$(EMAILER_USERNAME) \
 		--email-password=$(EMAILER_PASSWORD) \
 		--email-host=$(EMAILER_SERVER_HOST) \
+		--rollbar-env=$(ROLLBAR_ENV) \
+		--rollbar-token=$(ROLLBAR_TOKEN) \
 		--tg-bot-token=$(TG_BOT_TOKEN) \
 		--serve-port=$(EMAILER_PORT)
 
@@ -21,10 +24,10 @@ protoc:
 	@cd proto && protoc --go_out=plugins=grpc:. *.proto
 
 b:
-	go build -o emailer -ldflags "-X main.CommitHash=`git rev-parse HEAD`" -race ./cmd/main.go
+	go build -o emailer -ldflags $(VERSION) ./cmd/main.go
 
 bp:
-	env GOOS=linux GOARCH=386 go build -o emailer -ldflags "-X main.CommitHash=`git rev-parse HEAD`" ./cmd/main.go
+	env GOOS=linux GOARCH=386 go build -o emailer -ldflags $(VERSION) ./cmd/main.go
 
 up:
-	scp emailer $(MOTOVSKIKH_REMOTE_HOST_PATH)/emailer_test
+	scp emailer $(REMOTE_HOST_PATH)/emailer_test

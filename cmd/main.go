@@ -1,36 +1,40 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
 	"net"
 
-	"github.com/bugsnag/bugsnag-go"
 	"google.golang.org/grpc"
 
 	"github.com/LarsFox/emailer/api"
 	"github.com/LarsFox/emailer/mail"
 	"github.com/LarsFox/emailer/proto"
 	"github.com/LarsFox/emailer/tg"
+	"github.com/rollbar/rollbar-go"
 )
 
 var (
-	bugsnagKey    string
 	emailUsername string
 	emailPassword string
 	emailHost     string
 	emailPort     int64
+	rollbarEnv    string
+	rollbarToken  string
 	tgBotToken    string
 	serverPort    int64
 )
 
+// nolint:mnd
 func flagParse() {
-	flag.StringVar(&bugsnagKey, "bugsnag-key", "", "Bugsnag key")
 	flag.StringVar(&emailUsername, "email-username", "", "Account username")
 	flag.StringVar(&emailPassword, "email-password", "", "Account password")
 	flag.StringVar(&emailHost, "email-host", "", "Email server host")
 	flag.Int64Var(&emailPort, "email-port", 587, "Email server port")
+	flag.StringVar(&rollbarEnv, "rollbar-env", "dev", "Rollbar enb")
+	flag.StringVar(&rollbarToken, "rollbar-token", "", "Rollbar token")
 	flag.StringVar(&tgBotToken, "tg-bot-token", "", "TG Bot token")
 	flag.Int64Var(&serverPort, "serve-port", 8080, "Application serving port")
 	flag.Parse()
@@ -39,17 +43,17 @@ func flagParse() {
 func main() {
 	flagParse()
 	port := fmt.Sprintf(":%d", serverPort)
-	lis, err := net.Listen("tcp", port)
+
+	rollbar.SetCodeVersion(CommitHash)
+	rollbar.SetEnvironment(rollbarEnv)
+	rollbar.SetServerHost("emailer")
+	rollbar.SetToken(rollbarToken)
+
+	lc := &net.ListenConfig{}
+	lis, err := lc.Listen(context.Background(), "tcp", port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
-
-	defer bugsnag.Recover()
-	bugsnag.Configure(bugsnag.Configuration{
-		APIKey:       bugsnagKey,
-		AppVersion:   getAppVersion(),
-		PanicHandler: func() {},
-	})
 
 	emailClient := mail.NewClient(emailUsername, emailPassword, emailHost, emailPort)
 	tgClient := tg.NewClient(tgBotToken)
@@ -64,11 +68,3 @@ func main() {
 
 // CommitHash — commit hash, used with -ldflags.
 var CommitHash string
-
-func getAppVersion() string {
-	semver := "1.0.0"
-	if CommitHash == "" {
-		return semver
-	}
-	return fmt.Sprintf("%s-%s", semver, CommitHash)
-}

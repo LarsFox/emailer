@@ -8,7 +8,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/LarsFox/emailer/common"
+	"github.com/LarsFox/emailer/entities"
 )
 
 // Client works with Telegram.
@@ -45,23 +45,23 @@ func (c *Client) SendMessage(ctx context.Context, chatID int64, text string) err
 		ParseMode:         "MarkdownV2",
 		Text:              text,
 	}); err != nil {
-		return err
+		return fmt.Errorf("SendMessage encoding: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", uri, &b)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, uri, &b)
 	if err != nil {
-		return err
+		return fmt.Errorf("SendMessage new request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("SendMessage do request: %w", err)
 	}
 
 	result := &response{}
 	if err := json.NewDecoder(resp.Body).Decode(result); err != nil {
-		return err
+		return fmt.Errorf("SendMessage decoding: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -69,7 +69,7 @@ func (c *Client) SendMessage(ctx context.Context, chatID int64, text string) err
 	log.Println(string(result.Description))
 
 	if !result.Ok {
-		return &common.TGError{Code: result.ErrorCode, Description: string(result.Description)}
+		return &entities.TGError{Code: result.ErrorCode, Description: string(result.Description)}
 	}
 	return nil
 }

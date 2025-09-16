@@ -18,7 +18,7 @@ func NewClient(username, password, host string, port int64) *Client {
 	return &Client{auth: &auth, host: host, addr: fmt.Sprintf("%s:%d", host, port)}
 }
 
-var messageDummy = `To: %s
+const messageDummy = `To: %s
 From: "%s" <%s>
 Subject: %s
 Content-Type: text/html; charset=utf-8
@@ -28,5 +28,8 @@ Content-Type: text/html; charset=utf-8
 // SendOneEmail sends one simple email.
 func (c *Client) SendOneEmail(from, fromName, to, subj, msg string) error {
 	text := fmt.Sprintf(messageDummy, to, fromName, from, subj, msg)
-	return smtp.SendMail(c.addr, *c.auth, from, []string{to}, []byte(text))
+	if err := smtp.SendMail(c.addr, *c.auth, from, []string{to}, []byte(text)); err != nil {
+		return fmt.Errorf("SendOneEmail smtp.SendMail: %w", err)
+	}
+	return nil
 }
