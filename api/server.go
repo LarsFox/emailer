@@ -46,7 +46,9 @@ func (s *Server) SendOneTGMessage(ctx context.Context, in *proto.SendOneTGMessag
 		if errors.As(err, &tgErr) {
 			return &proto.SendOneTGMessageResponse{ErrorCode: tgErr.Code}, nil
 		}
-		rollbar.Error(err)
+		if !errors.Is(err, context.Canceled) {
+			rollbar.Error(err)
+		}
 		return &proto.SendOneTGMessageResponse{ErrorCode: 1}, nil
 	}
 	return &proto.SendOneTGMessageResponse{}, nil
